@@ -8,8 +8,7 @@
     <title>Simple TODO App</title>
 </head>
 
-<body class="bg-light">
-
+<body class="main">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">SimpleTODO</a>
@@ -19,25 +18,40 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="#">Home</a>
-                    </li>
-                </ul>
-                <form id="app-login-form" class="d-flex">
-                    <input class="form-control me-2" name="login" autocomplete="username" type="text"
-                        placeholder="Login" aria-label="Login">
-                    <input class="form-control me-2" name="password" autocomplete="current-password" type="password"
-                        placeholder="Password" aria-label="Password">
-                    <button id="app-login-btn" class="btn btn-outline-info" type="submit">Sign In</button>
-                </form>
+				<ul class="navbar-nav me-auto mb-2 mb-lg-0">
+					<li class="nav-item">
+						<a class="nav-link active" aria-current="page" href="#">Home</a>
+					</li>
+				</ul>
+
+				<form id="app-login-form" class="d-flex">
+					<input class="form-control me-2" name="login" autocomplete="username" type="text"
+						placeholder="Login" aria-label="Login">
+					<input class="form-control me-2" name="password" autocomplete="current-password" type="password"
+						placeholder="Password" aria-label="Password">
+					<button id="app-login-btn" class="btn btn-outline-info" type="submit">Sign In</button>
+				</form>
             </div>
         </div>
     </nav>
     <div class="container">
-        <p id="content">Please Sign In to see your tasks!</p>
+        <div id="content">
+			<p>Please Sign In to see your tasks!</p>
+		</div>
     </div>
 
+	<footer class="footer">
+		<!-- visibility-hidden because in HTML, we don't know if user is logged in or not. -->
+		<!-- this will be adjusted by JS -->
+		<div class="left visibility-hidden">
+			<div>Active tasks: <span id="app-active-tasks">0</span></div>
+			<div>Finished tasks: <span id="app-finished-tasks">0</span></div>
+		</div>
+		
+		<div class="right">
+			<div>Kanban board by <a href="https://github.com/ivan-developer-01" class="link">Ivan</a>, 2023</div>
+		</div>
+	</div>
 
 </body>
 

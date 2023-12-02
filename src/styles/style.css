@@ -1,3 +1,141 @@
 #app-login-btn {
   width: 160px;
 }
+
+.visibility-hidden {
+	visibility: hidden;
+}
+
+.display-none {
+	display: none;
+}
+
+.main {
+	background: #0079BF;
+	color: white;
+	font-size: 18px;
+}
+
+.board {
+	display: flex;
+	align-items: flex-start;
+	flex-direction: row;
+	gap: 24px;
+	padding-top: 20px;
+}
+
+.task-list {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	background: #EBECF0;
+	color: #000;
+	border-radius: 10px;
+	padding: 12px;
+	max-height: 60vh;
+	overflow: auto;
+	width: calc(calc(100% - calc(20px * 4)) / 4)
+}
+
+@media (max-width: 800px) {
+	.board {
+		flex-direction: column;
+	}
+
+	.task-list {
+		width: 100%;
+	}
+}
+
+.task-list .tasks {
+	list-style-type: none;
+	padding: 0;
+	margin: 0;
+}
+
+.task-list .task,
+.task-list .add-button {
+	border-radius: 5px;
+}
+
+.task-list .task,
+.task-list .add-input {
+	background: #fff;
+	padding: 8px;
+	margin-bottom: 15px;
+}
+
+.task-list .add-input .add-input-input {
+	outline: none;
+	border: none;
+	border-bottom: 0.5px solid #000;
+	width: 100%;
+}
+
+.task-list .add-input .add-input-input:focus::placeholder {
+	opacity: 0;
+}
+
+.task-list .task:last-child {
+	margin-bottom: 0;
+}
+
+.task-list .add-button,
+.task-list .submit-button {
+	appearance: none;
+	cursor: pointer;
+	background: transparent;
+	border: none;
+	outline: none;
+	color: #5E6C84;
+	padding: 4px;
+}
+
+.task-list .add-button:hover {
+	background: white;
+}
+
+.task-list .add-button:active {
+	background: #dddddd;
+}
+
+.task-list .submit-button {
+	background: #0079BF;
+	color: white;
+	padding: 4px 8px;
+	border-radius: 5px;
+}
+
+.task-list .submit-button:hover {
+	filter: brightness(1.1);
+}
+
+.task-list .submit-button:active {
+	filter: brightness(0.9);
+}
+
+.task-list .add-task-select {
+	width: 100%;
+	cursor: pointer;
+}
+
+.footer {
+	position: fixed;
+	bottom: 0;
+	display: flex;
+	justify-content: space-between;
+	background: #0067A3;
+	width: 100%;
+	padding: 17px 21px;
+}
+
+.footer .left {
+	display: flex;
+	flex-direction: row;
+	gap: 36px;
+}
+
+.footer .link {
+	color: #80d5f9;
+	font-style: italic;
+}
