@@ -2,6 +2,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./styles/style.css";
 import taskFieldTemplate from "./templates/taskField.html";
 import noAccessTemplate from "./templates/noAccess.html";
+import defaultTemplate from "./templates/default.html";
+import loggedOutTemplate from "./templates/headerRight/loggedOut.html";
+import loggedInTemplate from "./templates/headerRight/loggedIn.html";
 import { User } from "./models/User";
 import { Task } from "./models/Task";
 import { generateTestUser, getTasks } from "./utils";
@@ -23,42 +26,55 @@ const divsObject = {
 
 export const appState = new State();
 
-const loginForm = document.querySelector("#app-login-form");
+const headerRightPart = document.querySelector("#header-right-part");
+let loginForm = document.querySelector("#app-login-form");
+
+const contentDiv = document.querySelector("#content");
+contentDiv.innerHTML = defaultTemplate;
 
 // generateTestUser(User);
 
-loginForm.addEventListener("submit", function (e) {
-  e.preventDefault();
-  const formData = new FormData(loginForm);
-  const login = formData.get("login");
-  const password = formData.get("password");
-  const contentDiv = document.querySelector("#content");
+const addLoginListener = () => {
+  loginForm = document.querySelector("#app-login-form");
+  if (!loginForm) return;
+  loginForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    const formData = new FormData(loginForm);
+    const login = formData.get("login");
+    const password = formData.get("password");
+    
+    const isAuthSuccess = authUser(login, password);
+    
+    let fieldHTMLContent = isAuthSuccess
+      ? taskFieldTemplate
+      : noAccessTemplate;
+    let headerRightContent = isAuthSuccess
+      ? loggedInTemplate
+      : loggedOutTemplate;
+    
+    
+    contentDiv.innerHTML = fieldHTMLContent;
+    headerRightPart.innerHTML = headerRightContent;
+    
+    if (isAuthSuccess) {
+      backlogDiv = contentDiv.querySelector(".backlog");
+      readyDiv = contentDiv.querySelector(".ready");
+      inProgressDiv = contentDiv.querySelector(".in-progress");
+      finishedDiv = contentDiv.querySelector(".finished");
+      allDivs = [backlogDiv, readyDiv, inProgressDiv, finishedDiv];
+      let divs = {};
+      for (let key in divsObject) divs[key] = divsObject[key];
+      divs = getTaskDivs(divs);
+      updateTasks(divs);
+      updateTaskCountInfo();
+      assignEventListeners();
+    }
+    
+    toggleLeftPart();
+  });
+}
 
-  const isAuthSuccess = authUser(login, password);
-
-  let fieldHTMLContent = isAuthSuccess
-    ? taskFieldTemplate
-    : noAccessTemplate;
-
-  contentDiv.innerHTML = fieldHTMLContent;
-
-  if (isAuthSuccess) {
-    backlogDiv = contentDiv.querySelector(".backlog");
-    readyDiv = contentDiv.querySelector(".ready");
-    inProgressDiv = contentDiv.querySelector(".in-progress");
-    finishedDiv = contentDiv.querySelector(".finished");
-    allDivs = [backlogDiv, readyDiv, inProgressDiv, finishedDiv];
-    let divs = {};
-    for (let key in divsObject) divs[key] = divsObject[key];
-    divs = getTaskDivs(divs);
-    updateTasks(divs);
-    updateTaskCountInfo();
-    assignEventListeners();
-  }
-
-  toggleLeftPart();
-});
-
+addLoginListener();
 toggleLeftPart();
 
 function updateTasks(taskDivs) {
@@ -81,103 +97,120 @@ function updateTasks(taskDivs) {
 }
 
 function assignEventListeners() {
-	const buttons = allDivs.map(div => div.querySelector(".add-button"));
-	const { backlog, ready, in_progress: inProgress, finished } = getTaskDivs(divsObject);
-	const submitButtons = allDivs.map(div => div.querySelector(".submit-button"));
-	const addButtons = allDivs.map(div => div.querySelector(".add-button"));
+	// adding tasks
+	(() => {
+		const buttons = allDivs.map(div => div.querySelector(".add-button"));
+		const { backlog, ready, in_progress: inProgress, finished } = getTaskDivs(divsObject);
+		const submitButtons = allDivs.map(div => div.querySelector(".submit-button"));
+		const addButtons = allDivs.map(div => div.querySelector(".add-button"));
 
-	// backlog add button
-	buttons[0].addEventListener("click", function () {
-		const inputWrapper = document.createElement("li");
-		inputWrapper.classList.add("add-input");
-		const input = document.createElement("input")
-		input.classList.add("add-input-input");
-		input.placeholder = "Enter task...";
-		input.type = "text";
-		inputWrapper.appendChild(input);
-		backlog.appendChild(inputWrapper);
-		input.focus();
-		
-		let btns = [submitButtons[0], addButtons[0]];
-		
-		btns.forEach(button => button.classList.toggle("display-none"));
-		
-		btns[0].addEventListener("click", addTask);
-		input.addEventListener("blur", addTask);
-		input.addEventListener("keydown",  (e) => {
-			if (e.key === "Enter") addTask();
-		});
-
-		function addTask() {
-			if (!input.value) return false;
-			const task = new Task("backlog", input.value, appState.currentUser.id);
-			Task.save(task);
-			updateTasks(getTaskDivs(divsObject));
+		// backlog add button
+		buttons[0].addEventListener("click", function () {
+			const inputWrapper = document.createElement("li");
+			inputWrapper.classList.add("add-input");
+			const input = document.createElement("input")
+			input.classList.add("add-input-input");
+			input.placeholder = "Enter task...";
+			input.type = "text";
+			inputWrapper.appendChild(input);
+			backlog.appendChild(inputWrapper);
+			input.focus();
+			
+			let btns = [submitButtons[0], addButtons[0]];
+			
 			btns.forEach(button => button.classList.toggle("display-none"));
+			
+			btns[0].addEventListener("click", addTask);
+			input.addEventListener("blur", addTask);
+			input.addEventListener("keydown",  (e) => {
+				if (e.key === "Enter") addTask();
+			});
+
+			function addTask() {
+				if (!input.value) return false;
+				const task = new Task("backlog", input.value, appState.currentUser.id);
+				Task.save(task);
+				updateTasks(getTaskDivs(divsObject));
+				btns.forEach(button => button.classList.toggle("display-none"));
+			}
+		});
+		
+		buttons[1].addEventListener("click", transferTaskListenerTemplate.bind(null, ready, "backlog", "ready", addButtons[1]));
+		buttons[2].addEventListener("click", transferTaskListenerTemplate.bind(null, inProgress, "ready", "in_progress", addButtons[2]));
+		buttons[3].addEventListener("click", transferTaskListenerTemplate.bind(null, finished, "in_progress", "finished", addButtons[3]));
+
+		function transferTaskListenerTemplate(taskDiv, taskGroup, transferTo, addButton) {
+			// use transferTaskListenerTemplate.bind(null, ...)
+			const select = document.createElement("select");
+			select.classList.add("add-task-select");
+			const currentTasks = getTasks().filter(task => task.group === taskGroup);
+			select.innerHTML = `<option disabled selected>Select task&hellip;</option>`
+			currentTasks.forEach(task => {
+				const option = document.createElement("option");
+				option.value = task.id;
+				option.textContent = task.title;
+				select.appendChild(option);
+			});
+			taskDiv.appendChild(select);
+
+			addButton.classList.add("display-none");
+			
+			select.addEventListener("input", () => {
+				const task = JSON.parse(JSON.stringify(getTasks().find(task => task.id === select.value)));
+				Task.deleteTask(select.value)
+				task.belongsTo = task.belongs_to;
+				delete task.belongs_to;
+				task.storageKey = Task.storageKey;
+				task.group = transferTo;
+				Task.save(task);
+				updateTasks(getTaskDivs(divsObject));
+				addButton.classList.remove("display-none");
+			});
 		}
-	});
+	})();
 
-	// ready add button
-	// buttons[1].addEventListener("click", function () {
-	// 	const select = document.createElement("select");
-	// 	select.classList.add("add-task-select");
-	// 	const backlogTasks = getTasks().filter(task => task.group === "backlog");
-	// 	backlogTasks.forEach(task => {
-	// 		const option = document.createElement("option");
-	// 		option.value = task.id;
-	// 		option.textContent = task.title;
-	// 		select.appendChild(option);
-	// 	});
-	// 	ready.appendChild(select);
+	// user menu
+	(() => {
+		const userMenu = document.querySelector(".user-menu");
+		const menuList = userMenu.querySelector(".menu");
+		const menuArrow = userMenu.querySelector(".arrow");
 
-	// 	let btns = [submitButtons[1], addButtons[1]];
-	// 	btns.forEach(button => button.classList.toggle("display-none"));
-		
-	// 	btns[0].addEventListener("click", () => {
-	// 		const task = JSON.parse(JSON.stringify(getTasks().find(task => task.id === select.value)));
-	// 		Task.deleteTask(select.value)
-	// 		task.belongsTo = task.belongs_to;
-	// 		delete task.belongs_to;
-	// 		task.storageKey = Task.storageKey;
-	// 		task.group = "ready";
-	// 		Task.save(task);
-	// 		updateTasks(getTaskDivs(divsObject));
-	// 		btns.forEach(button => button.classList.toggle("display-none"));
-	// 	});
-	// });
-
-	buttons[1].addEventListener("click", transferTaskListenerTemplate.bind(null, ready, "backlog", "ready", addButtons[1]));
-	buttons[2].addEventListener("click", transferTaskListenerTemplate.bind(null, inProgress, "ready", "in_progress", addButtons[2]));
-	buttons[3].addEventListener("click", transferTaskListenerTemplate.bind(null, finished, "in_progress", "finished", addButtons[3]));
-
-	function transferTaskListenerTemplate(taskDiv, taskGroup, transferTo, addButton) {
-		// use transferTaskListenerTemplate.bind(null, ...)
-		const select = document.createElement("select");
-		select.classList.add("add-task-select");
-		const currentTasks = getTasks().filter(task => task.group === taskGroup);
-		select.innerHTML = `<option disabled selected>Select task&hellip;</option>`
-		currentTasks.forEach(task => {
-			const option = document.createElement("option");
-			option.value = task.id;
-			option.textContent = task.title;
-			select.appendChild(option);
+		userMenu.addEventListener("click", () => {
+			menuList.classList.toggle("display-none");
+			menuArrow.classList.toggle("active");
 		});
-		taskDiv.appendChild(select);
 
-		addButton.classList.add("display-none");
-		
-		select.addEventListener("input", () => {
-			const task = JSON.parse(JSON.stringify(getTasks().find(task => task.id === select.value)));
-			Task.deleteTask(select.value)
-			task.belongsTo = task.belongs_to;
-			delete task.belongs_to;
-			task.storageKey = Task.storageKey;
-			task.group = transferTo;
-			Task.save(task);
-			updateTasks(getTaskDivs(divsObject));
-			addButton.classList.remove("display-none");
+		// logout button
+		const logoutButton = menuList.querySelector("#app-logout-li");
+		logoutButton.addEventListener("click", () => {
+			appState.currentUser = null;
+			const contentDiv = document.querySelector("#content");
+			contentDiv.innerHTML = defaultTemplate;
+			headerRightPart.innerHTML = loggedOutTemplate;
+			toggleLeftPart();
+			addLoginListener();
 		});
-	}
+
+		// blur listener
+		window.addEventListener("click", (e) => {
+			// credits: https://stackoverflow.com/questions/6856871/getting-the-parent-div-of-element#comment123149106_6857116
+			if (e.target.closest(".user-menu") !== userMenu) {
+				hideMenu();
+			}
+		});
+
+		window.addEventListener("keydown", (e) => {
+			if (e.key === "Escape") {
+				hideMenu();
+			}
+		});
+
+		function hideMenu() {
+			menuList.classList.add("display-none");
+			menuArrow.classList.remove("active");
+		}
+	})();
+
 }
 
 function getTaskDivs(divs) {
