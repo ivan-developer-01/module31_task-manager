@@ -16,6 +16,10 @@
 	font-size: 18px;
 }
 
+.main.popup-open {
+	overflow: hidden;
+}
+
 .board {
 	display: flex;
 	align-items: flex-start;
@@ -35,6 +39,19 @@
 	max-height: 60vh;
 	overflow: auto;
 	width: calc(calc(100% - calc(20px * 4)) / 4)
+}
+
+.task-list .task {
+	cursor: pointer;
+	transition: background 0.09s;
+}
+
+.task-list .task:hover {
+	background: #dddddd;
+}
+
+.task-list .task:active {
+	background: #bbbbbb;
 }
 
 @media (max-width: 800px) {
@@ -215,4 +232,88 @@
 
 .user-menu .menu-item:active {
 	filter: brightness(0.9);
+}
+
+/* popup */
+.popup-open {
+	overflow: hidden;
+}
+
+.popup-open .popup-edit-overlay,
+.popup-open .popup-edit {
+	display: block;
+}
+
+.popup-edit-overlay {
+	display: none;
+	background: rgba(0, 0, 0, 0);
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 1000;
+	backdrop-filter: blur(2px);
+}
+
+.popup-edit {
+	display: none;
+	position: fixed;
+	top: 65px;
+	left: 20px;
+	width: calc(100% - 40px);
+	height: 80%;
+	background: #fff;
+	color: #000;
+	z-index: 1000;
+	padding: 22px 28px;
+	border-radius: 5px;
+}
+
+.popup-edit .popup-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 35px;
+}
+
+.popup-edit .popup-header .popup-close {
+	position: relative;
+	width: 32px;
+	height: 32px;
+	cursor: pointer;
+	display: flex;
+	justify-content: center;
+	border-radius: 1px;
+}
+
+.popup-edit .popup-header .popup-close:hover {
+	box-shadow: 0 0 5px 1px #000;
+}
+
+.popup-edit .popup-header .popup-close:active {
+	transform: scale(0.9);
+}
+
+.popup-edit .popup-header .popup-close::before,
+.popup-edit .popup-header .popup-close::after {
+	content: "";
+	position: absolute;
+	width: 1px;
+	height: 32px;
+	background-color: #000;
+}
+
+.popup-edit .popup-header .popup-close::before {
+	transform: rotate(45deg);
+}
+
+.popup-edit .popup-header .popup-close::after {
+	transform: rotate(-45deg);
+}
+
+.popup-edit .popup-controls {
+	position: absolute;
+	bottom: 20px;
+	right: 20px;
 }

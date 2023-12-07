@@ -24,6 +24,21 @@ const divsObject = {
 	get finished() { return finishedDiv; }
 };
 
+const body = document.querySelector(".main");
+
+const popup = document.querySelector(".popup-edit");
+const popupClose = popup.querySelector(".popup-close");
+const popupCancel = popup.querySelector("#popup-cancel");
+
+[popupClose, popupCancel].forEach(element => {
+	element.addEventListener("click", function () {
+		body.classList.remove("popup-open");
+	});
+});
+
+const popupSave = document.querySelector("#popup-save");
+const popupDelete = document.querySelector("#popup-delete");
+
 export const appState = new State();
 
 const headerRightPart = document.querySelector("#header-right-part");
@@ -67,8 +82,8 @@ const addLoginListener = () => {
       divs = getTaskDivs(divs);
       updateTasks(divs);
       updateTaskCountInfo();
-      assignEventListeners();
-    }
+      assignEventListeners(true);
+    } else addLoginListener();
     
     toggleLeftPart();
   });
@@ -87,7 +102,7 @@ function updateTasks(taskDivs) {
 		let toInsert = "";
 
 		for (let task of currentTasks) {
-			toInsert += `<li class="task" data-id="${task.id}">${task.title}</li>`;
+			toInsert += `<li class="task" data-id="${task.id}" data-desc="${task.extended_description || ""}">${task.title}</li>`;
 		}
 
 		taskDivs[i].innerHTML = toInsert;
@@ -96,54 +111,73 @@ function updateTasks(taskDivs) {
 	updateTaskCountInfo();
 }
 
-function assignEventListeners() {
+const buttonListenerStates = {
+	backlog: false,
+	ready: false,
+	in_progress: false,
+	finished: false
+};
+
+function assignEventListeners(isFirstTime = false) {
 	// adding tasks
-	(() => {
+	((isFirstTime) => {
 		const buttons = allDivs.map(div => div.querySelector(".add-button"));
 		const { backlog, ready, in_progress: inProgress, finished } = getTaskDivs(divsObject);
 		const submitButtons = allDivs.map(div => div.querySelector(".submit-button"));
 		const addButtons = allDivs.map(div => div.querySelector(".add-button"));
 
 		// backlog add button
-		buttons[0].addEventListener("click", function () {
-			const inputWrapper = document.createElement("li");
-			inputWrapper.classList.add("add-input");
-			const input = document.createElement("input")
-			input.classList.add("add-input-input");
-			input.placeholder = "Enter task...";
-			input.type = "text";
-			inputWrapper.appendChild(input);
-			backlog.appendChild(inputWrapper);
-			input.focus();
-			
-			let btns = [submitButtons[0], addButtons[0]];
-			
-			btns.forEach(button => button.classList.toggle("display-none"));
-			
-			btns[0].addEventListener("click", addTask);
-			input.addEventListener("blur", addTask);
-			input.addEventListener("keydown",  (e) => {
-				if (e.key === "Enter") addTask();
+		if (!buttonListenerStates.backlog) {
+			buttons[0].addEventListener("click", function () {
+				const inputWrapper = document.createElement("li");
+				inputWrapper.classList.add("add-input");
+				const input = document.createElement("input")
+				input.classList.add("add-input-input");
+				input.placeholder = "Enter task...";
+				input.type = "text";
+				inputWrapper.appendChild(input);
+				backlog.appendChild(inputWrapper);
+				input.focus();
+				
+				let btns = [submitButtons[0], addButtons[0]];
+				
+				btns.forEach(button => button.classList.toggle("display-none"));
+				
+				btns[0].addEventListener("click", addTask);
+				input.addEventListener("blur", addTask);
+				input.addEventListener("keydown",  (e) => {
+					if (e.key === "Enter") addTask();
+				});
+
+				function addTask() {
+					if (!input.value) return false;
+					const task = new Task("backlog", input.value, appState.currentUser.id);
+					Task.save(task);
+					updateTasks(getTaskDivs(divsObject));
+					btns.forEach(button => button.classList.toggle("display-none"));
+					assignEventListeners();
+				}
 			});
 
-			function addTask() {
-				if (!input.value) return false;
-				const task = new Task("backlog", input.value, appState.currentUser.id);
-				Task.save(task);
-				updateTasks(getTaskDivs(divsObject));
-				btns.forEach(button => button.classList.toggle("display-none"));
-			}
-		});
-		
-		buttons[1].addEventListener("click", transferTaskListenerTemplate.bind(null, ready, "backlog", "ready", addButtons[1]));
-		buttons[2].addEventListener("click", transferTaskListenerTemplate.bind(null, inProgress, "ready", "in_progress", addButtons[2]));
-		buttons[3].addEventListener("click", transferTaskListenerTemplate.bind(null, finished, "in_progress", "finished", addButtons[3]));
+			buttonListenerStates.backlog = true;
+		}
+
+		if (!buttonListenerStates.ready) {
+			 buttons[1].addEventListener("click", transferTaskListenerTemplate.bind(null, ready, "backlog", "ready", addButtons[1]));
+			buttonListenerStates.ready = true;
+		} if (!buttonListenerStates.in_progress) {
+			 buttons[2].addEventListener("click", transferTaskListenerTemplate.bind(null, inProgress, "ready", "in_progress", addButtons[2]));
+			buttonListenerStates.in_progress = true;
+		} if (!buttonListenerStates.finished) {
+			buttons[3].addEventListener("click", transferTaskListenerTemplate.bind(null, finished, "in_progress", "finished", addButtons[3]));
+			buttonListenerStates.finished = true;
+		}
 
 		function transferTaskListenerTemplate(taskDiv, taskGroup, transferTo, addButton) {
 			// use transferTaskListenerTemplate.bind(null, ...)
 			const select = document.createElement("select");
 			select.classList.add("add-task-select");
-			const currentTasks = getTasks().filter(task => task.group === taskGroup);
+			const currentTasks = getTasks().filter(task => task.group === taskGroup && task.belongs_to === appState.currentUser.id);
 			select.innerHTML = `<option disabled selected>Select task&hellip;</option>`
 			currentTasks.forEach(task => {
 				const option = document.createElement("option");
@@ -151,7 +185,10 @@ function assignEventListeners() {
 				option.textContent = task.title;
 				select.appendChild(option);
 			});
-			taskDiv.appendChild(select);
+			
+			if (isFirstTime) {
+				taskDiv.appendChild(select);
+			}
 
 			addButton.classList.add("display-none");
 			
@@ -165,12 +202,16 @@ function assignEventListeners() {
 				Task.save(task);
 				updateTasks(getTaskDivs(divsObject));
 				addButton.classList.remove("display-none");
+				assignEventListeners();
 			});
 		}
-	})();
+	})(isFirstTime);
 
 	// user menu
-	(() => {
+	((isFirstTime) => {
+		if (!isFirstTime) return;
+
+		console.log(Math.random() + " user menu listener added!")
 		const userMenu = document.querySelector(".user-menu");
 		const menuList = userMenu.querySelector(".menu");
 		const menuArrow = userMenu.querySelector(".arrow");
@@ -188,6 +229,7 @@ function assignEventListeners() {
 			contentDiv.innerHTML = defaultTemplate;
 			headerRightPart.innerHTML = loggedOutTemplate;
 			toggleLeftPart();
+			for (let i in buttonListenerStates) buttonListenerStates[i] = false;
 			addLoginListener();
 		});
 
@@ -209,12 +251,62 @@ function assignEventListeners() {
 			menuList.classList.add("display-none");
 			menuArrow.classList.remove("active");
 		}
-	})();
+	})(isFirstTime);
 
+	// editing tasks
+	(() => {
+		let taskDivs = getTaskDivs(allDivs);
+		for (let i in taskDivs) {
+			for (let task of taskDivs[i].children) {
+				task.addEventListener("click", () => {
+					body.classList.add("popup-open");
+
+					const thisTask = getTasks().find(t => t.id === task.dataset.id);
+
+					const popupTitle = popup.querySelector("#popup-title");
+					const popupDescription = popup.querySelector("#popup-description");
+
+					popupTitle.textContent = task.textContent;
+					popupDescription.textContent = task.dataset.desc || "Enter description...";
+
+					if (!task.dataset.desc) {
+						popupDescription.addEventListener("click", () => {
+							popupDescription.textContent = "";
+						}, { once: true });
+					}
+
+					const saveFunction = () => {
+						task.textContent = popupTitle.textContent;
+						task.dataset.desc = popupDescription.textContent;
+						thisTask.title = popupTitle.textContent;
+						thisTask.belongsTo = appState.currentUser.id;
+						thisTask.extendedDescription = popupDescription.textContent;
+						thisTask.storageKey = Task.storageKey;
+						Task.update(thisTask.id, thisTask);
+						body.classList.remove("popup-open");
+					};
+
+					const deleteFunction = deleteTask.bind(task, saveFunction, popupSave);
+
+					popupSave.addEventListener("click", saveFunction, { once: true });
+					popupDelete.addEventListener("click", deleteFunction, { once: true });
+				});
+			}
+		}
+	})();
 }
 
 function getTaskDivs(divs) {
 	return Object.fromEntries(Object.entries(divs).map(
 		([key, value]) => [key, value.querySelector(".tasks")])
 	);
+}
+
+function deleteTask(saveFn, saveButton) {
+	body.classList.remove("popup-open");
+	Task.deleteTask(this.dataset.id);
+	updateTasks(getTaskDivs(divsObject));
+	assignEventListeners();
+
+	saveButton.removeEventListener("click", saveFn);
 }
