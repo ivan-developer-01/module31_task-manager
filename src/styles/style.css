@@ -312,6 +312,12 @@
 	transform: rotate(-45deg);
 }
 
+.popup-edit #popup-description {
+	height: 100%;
+	width: 100%;
+	word-wrap: pre;
+}
+
 .popup-edit .popup-controls {
 	position: absolute;
 	bottom: 20px;
