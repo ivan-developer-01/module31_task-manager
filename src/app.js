@@ -210,8 +210,7 @@ function assignEventListeners(isFirstTime = false) {
 	// user menu
 	((isFirstTime) => {
 		if (!isFirstTime) return;
-
-		console.log(Math.random() + " user menu listener added!")
+		
 		const userMenu = document.querySelector(".user-menu");
 		const menuList = userMenu.querySelector(".menu");
 		const menuArrow = userMenu.querySelector(".arrow");
