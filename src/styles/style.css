@@ -108,12 +108,17 @@
 	padding: 4px;
 }
 
-.task-list .add-button:hover {
+.task-list .add-button:not([disabled="true"]):hover {
 	background: white;
 }
 
-.task-list .add-button:active {
+.task-list .add-button:not([disabled="true"]):active {
 	background: #dddddd;
+}
+
+.task-list .add-button[disabled="true"] {
+	opacity: 0.5;
+	cursor: not-allowed;
 }
 
 .task-list .submit-button {

@@ -109,6 +109,7 @@ function updateTasks(taskDivs) {
 	}
 
 	updateTaskCountInfo();
+	toggleButtonDisable();
 }
 
 const buttonListenerStates = {
@@ -205,12 +206,14 @@ function assignEventListeners(isFirstTime = false) {
 				assignEventListeners();
 			});
 		}
+
+		toggleButtonDisable();
 	})(isFirstTime);
 
 	// user menu
 	((isFirstTime) => {
 		if (!isFirstTime) return;
-		
+
 		const userMenu = document.querySelector(".user-menu");
 		const menuList = userMenu.querySelector(".menu");
 		const menuArrow = userMenu.querySelector(".arrow");
@@ -308,4 +311,20 @@ function deleteTask(saveFn, saveButton) {
 	assignEventListeners();
 
 	saveButton.removeEventListener("click", saveFn);
+}
+
+function toggleButtonDisable() {
+	const addButtons = allDivs.map(div => div.querySelector(".add-button"));
+	const tasks = getTasks().filter(task => task.belongs_to === appState.currentUser.id);
+	const backlogTasks = tasks.filter(task => task.group === "backlog");
+	const readyTasks = tasks.filter(task => task.group === "ready");
+	const inProgressTasks = tasks.filter(task => task.group === "in_progress");
+	const finishedTasks = tasks.filter(task => task.group === "finished");
+
+	const tasksArray = [backlogTasks, readyTasks, inProgressTasks, finishedTasks];
+	for (let i in addButtons) {
+		console.log(i,  addButtons[i], tasksArray[i], tasksArray[i - 1], tasksArray[i - 1]?.length === 0);
+		if (tasksArray[i - 1]?.length === 0) addButtons[i].setAttribute("disabled", true);
+		else addButtons[i].removeAttribute("disabled");
+	}
 }
