@@ -41,6 +41,11 @@
 	width: calc(calc(100% - calc(20px * 4)) / 4)
 }
 
+.main.admin .task-list .task::before {
+	content: attr(data-belongs-login) ": ";
+	font-weight: bold;
+}
+
 .task-list .task {
 	cursor: pointer;
 	transition: background 0.09s;

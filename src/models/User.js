@@ -7,6 +7,7 @@ export class User extends BaseModel {
     this.login = login;
     this.password = password;
     this.storageKey = "users";
+	this.adminStorageKey = "admins";
   }
   get hasAccess() {
     let users = getFromStorage(this.storageKey);
@@ -19,6 +20,17 @@ export class User extends BaseModel {
     }
     return false;
   }
+  get hasAdminAccess() {
+	let admins = getFromStorage(this.adminStorageKey);
+	if (admins.length == 0) return false;
+	for (let admin of admins) {
+	  if (admin.login === this.login && admin.password === this.password) {
+		this.id = admin.id;
+		return true;
+	  }
+	}
+	return false;
+  }
   static save(user) {
     try {
       addToStorage(user, user.storageKey);
@@ -27,4 +39,16 @@ export class User extends BaseModel {
       throw new Error(e);
     }
   }
+  static get(id) {
+	let users = getFromStorage(User.storageKey);
+	let admins = getFromStorage(User.adminStorageKey);
+	users = users.concat(admins);
+	for (let user of users) {
+		if (user.id === id) return user;
+	}
+	return null;
+  }
+
+  static get storageKey() { return "users"; }
+  static get adminStorageKey() { return "admins"; }
 }

@@ -9,7 +9,7 @@ import { User } from "./models/User";
 import { Task } from "./models/Task";
 import { generateTestUser, getTasks } from "./utils";
 import { State } from "./state";
-import { authUser } from "./services/auth";
+import { authUser, isUserAdmin } from "./services/auth";
 export let backlogDiv = null;
 export let readyDiv = null;
 export let inProgressDiv = null;
@@ -48,6 +48,19 @@ const contentDiv = document.querySelector("#content");
 contentDiv.innerHTML = defaultTemplate;
 
 // generateTestUser(User);
+if (!localStorage.getItem("users")) generateTestUser(User);
+// admins
+if (!localStorage.getItem("admins")) {
+	const admins = [
+		{
+			id: "55b622e7-5501-4f9c-87ed-662b4f4c82c5",
+			login: "admin",
+			password: "admin",
+			storageKey: "admins"
+		}
+	];
+	localStorage.setItem("admins", JSON.stringify(admins));
+}
 
 const addLoginListener = () => {
   loginForm = document.querySelector("#app-login-form");
@@ -72,6 +85,7 @@ const addLoginListener = () => {
     headerRightPart.innerHTML = headerRightContent;
     
     if (isAuthSuccess) {
+      if (isUserAdmin()) body.classList.add("admin");
       backlogDiv = contentDiv.querySelector(".backlog");
       readyDiv = contentDiv.querySelector(".ready");
       inProgressDiv = contentDiv.querySelector(".in-progress");
@@ -95,14 +109,19 @@ toggleLeftPart();
 function updateTasks(taskDivs) {
 	let tasks = getTasks();
 	const currentID = appState.currentUser.id;
-	tasks = tasks.filter(task => task.belongs_to === currentID);
+	if (!isUserAdmin()) tasks = tasks.filter(task => task.belongs_to === currentID);
 
 	for (let i in taskDivs) {
 		const currentTasks = tasks.filter(task => task.group === i);
 		let toInsert = "";
 
 		for (let task of currentTasks) {
-			toInsert += `<li class="task" data-id="${task.id}" data-desc="${task.extended_description || ""}">${task.title}</li>`;
+			try {
+				toInsert += `<li class="task" data-belongs-to="${task.belongs_to}" ${isUserAdmin() ? 'data-belongs-login="' + User.get(task.belongs_to).login + '"' : ""} data-id="${task.id}" data-desc="${task.extended_description || ""}"
+				>${task.title}</li>`;
+			} catch (error) {
+				console.error(error);
+			}
 		}
 
 		taskDivs[i].innerHTML = toInsert;
@@ -139,7 +158,7 @@ function assignEventListeners(isFirstTime = false) {
 				inputWrapper.appendChild(input);
 				backlog.appendChild(inputWrapper);
 				input.focus();
-				
+
 				let btns = [submitButtons[0], addButtons[0]];
 				
 				btns.forEach(button => button.classList.toggle("display-none"));
@@ -178,7 +197,8 @@ function assignEventListeners(isFirstTime = false) {
 			// use transferTaskListenerTemplate.bind(null, ...)
 			const select = document.createElement("select");
 			select.classList.add("add-task-select");
-			const currentTasks = getTasks().filter(task => task.group === taskGroup && task.belongs_to === appState.currentUser.id);
+			const currentTasks = getTasks().filter(task => task.group === taskGroup);
+			if (!isUserAdmin()) currentTasks = currentTasks.filter(task => task.belongs_to === appState.currentUser.id);
 			select.innerHTML = `<option disabled selected>Select task&hellip;</option>`
 			currentTasks.forEach(task => {
 				const option = document.createElement("option");
@@ -227,6 +247,7 @@ function assignEventListeners(isFirstTime = false) {
 		const logoutButton = menuList.querySelector("#app-logout-li");
 		logoutButton.addEventListener("click", () => {
 			appState.currentUser = null;
+			body.classList.remove("admin");
 			const contentDiv = document.querySelector("#content");
 			contentDiv.innerHTML = defaultTemplate;
 			headerRightPart.innerHTML = loggedOutTemplate;
@@ -279,9 +300,9 @@ function assignEventListeners(isFirstTime = false) {
 
 					const saveFunction = () => {
 						task.textContent = popupTitle.textContent;
-						task.dataset.desc = popupDescription.textContent;
+						task.dataset.desc = popupDescription.value;
 						thisTask.title = popupTitle.textContent;
-						thisTask.belongsTo = appState.currentUser.id;
+						thisTask.belongsTo = task.dataset.belongsTo;
 						thisTask.extendedDescription = popupDescription.value;
 						thisTask.storageKey = Task.storageKey;
 						Task.update(thisTask.id, thisTask);
@@ -315,7 +336,8 @@ function deleteTask(saveFn, saveButton) {
 
 function toggleButtonDisable() {
 	const addButtons = allDivs.map(div => div.querySelector(".add-button"));
-	const tasks = getTasks().filter(task => task.belongs_to === appState.currentUser.id);
+	let tasks = getTasks();
+	if (!isUserAdmin()) tasks = tasks.filter(task => task.belongs_to === appState.currentUser.id);
 	const backlogTasks = tasks.filter(task => task.group === "backlog");
 	const readyTasks = tasks.filter(task => task.group === "ready");
 	const inProgressTasks = tasks.filter(task => task.group === "in_progress");
@@ -323,7 +345,6 @@ function toggleButtonDisable() {
 
 	const tasksArray = [backlogTasks, readyTasks, inProgressTasks, finishedTasks];
 	for (let i in addButtons) {
-		console.log(i,  addButtons[i], tasksArray[i], tasksArray[i - 1], tasksArray[i - 1]?.length === 0);
 		if (tasksArray[i - 1]?.length === 0) addButtons[i].setAttribute("disabled", true);
 		else addButtons[i].removeAttribute("disabled");
 	}
