@@ -1,20 +1,22 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./styles/style.css";
+import "./styles/admin.css";
 import taskFieldTemplate from "./templates/taskField.html";
 import noAccessTemplate from "./templates/noAccess.html";
+import userMgmtTemplate from "./templates/userMgmt.html"
 import defaultTemplate from "./templates/default.html";
 import loggedOutTemplate from "./templates/headerRight/loggedOut.html";
 import loggedInTemplate from "./templates/headerRight/loggedIn.html";
 import { User } from "./models/User";
 import { Task } from "./models/Task";
-import { generateTestUser, getTasks } from "./utils";
+import { generateTestUser, getFromStorage, getTasks } from "./utils";
 import { State } from "./state";
 import { authUser, isUserAdmin } from "./services/auth";
 export let backlogDiv = null;
 export let readyDiv = null;
 export let inProgressDiv = null;
 export let finishedDiv = null;
-import { toggleLeftPart, updateTaskCountInfo } from "./leftPart";
+import { hideLeftPart, showLeftPart, toggleLeftPart, updateTaskCountInfo } from "./leftPart";
 
 let allDivs = [backlogDiv, readyDiv, inProgressDiv, finishedDiv];
 const divsObject = {
@@ -197,7 +199,7 @@ function assignEventListeners(isFirstTime = false) {
 			// use transferTaskListenerTemplate.bind(null, ...)
 			const select = document.createElement("select");
 			select.classList.add("add-task-select");
-			const currentTasks = getTasks().filter(task => task.group === taskGroup);
+			let currentTasks = getTasks().filter(task => task.group === taskGroup);
 			if (!isUserAdmin()) currentTasks = currentTasks.filter(task => task.belongs_to === appState.currentUser.id);
 			select.innerHTML = `<option disabled selected>Select task&hellip;</option>`
 			currentTasks.forEach(task => {
@@ -217,6 +219,7 @@ function assignEventListeners(isFirstTime = false) {
 				const task = JSON.parse(JSON.stringify(getTasks().find(task => task.id === select.value)));
 				Task.deleteTask(select.value)
 				task.belongsTo = task.belongs_to;
+				task.extendedDescription = task.extended_description;
 				delete task.belongs_to;
 				task.storageKey = Task.storageKey;
 				task.group = transferTo;
@@ -255,6 +258,106 @@ function assignEventListeners(isFirstTime = false) {
 			for (let i in buttonListenerStates) buttonListenerStates[i] = false;
 			addLoginListener();
 		});
+
+		if (isUserAdmin()) {
+			const userManageLi = document.createElement("li");
+			userManageLi.className = "menu-item";
+			userManageLi.setAttribute("id", "app-usermgmt-li");
+			userManageLi.textContent = "User mgmt";
+			userManageLi.setAttribute("title", "Mgmt — management");
+
+			userManageLi.addEventListener("click", () => {
+				const contentDiv = document.querySelector("#content");
+				contentDiv.innerHTML = userMgmtTemplate;
+				
+				hideLeftPart();
+				
+				const usersList = contentDiv.querySelector(".mgmt-list.users");
+				const adminsList = contentDiv.querySelector(".mgmt-list.admins");
+				
+				const addUserButton = contentDiv.querySelector("#mgmt-add-user");
+				const addAdminButton = contentDiv.querySelector("#mgmt-add-admin");
+				
+				const updateUsersList = updateList.bind(null, usersList, User.storageKey, "user");
+				const updateAdminsList = updateList.bind(null, adminsList, User.adminStorageKey, "admin");
+
+				updateUsersList();
+				updateAdminsList();
+
+				addUserButton.addEventListener("click", () => {
+					const login = prompt("User login:");
+					const password = prompt("User password:");
+					const user = new User(login, password);
+					User.save(user);
+					updateUsersList(usersList);
+				});
+
+				addAdminButton.addEventListener("click", () => {
+					const login = prompt("Admin login:");
+					const password = prompt("Admin password:");
+					const user = new User(login, password, true);
+					User.save(user);
+					updateAdminsList(adminsList);
+				});
+
+				const backButton = contentDiv.querySelector("#mgmt-back");
+				backButton.addEventListener("click", () => {
+					contentDiv.innerHTML = taskFieldTemplate;
+					backlogDiv = contentDiv.querySelector(".backlog");
+					readyDiv = contentDiv.querySelector(".ready");
+					inProgressDiv = contentDiv.querySelector(".in-progress");
+					finishedDiv = contentDiv.querySelector(".finished");
+					allDivs = [backlogDiv, readyDiv, inProgressDiv, finishedDiv];
+					showLeftPart();
+					for (let i in buttonListenerStates) buttonListenerStates[i] = false;
+					updateTasks(getTaskDivs(divsObject));
+					toggleButtonDisable();
+					assignEventListeners();
+				});
+			});
+
+			function updateList(list, key, liKey) {
+				const users = getFromStorage(key);
+				list.innerHTML = "";
+				for (let user of users) {
+					const li = document.createElement("li");
+					const loginSpan    = document.createElement("span");
+					const passwordSpan = document.createElement("span");
+					const deleteButton = document.createElement("button");
+
+					loginSpan.className = `mgmt-${liKey}-login`;
+					passwordSpan.className = `mgmt-password`;
+					deleteButton.className = `mgmt-${liKey}-delete btn btn-danger`;
+
+					loginSpan.textContent = user.login;
+					passwordSpan.textContent = user.password;
+
+					deleteButton.innerHTML = "&times;";
+					deleteButton.addEventListener("click", () => {
+						User.delete(li.dataset.id);
+						Task.deleteBelongsTo(li.dataset.id);
+						updateList(list, key, liKey);
+					});
+
+					li.className = "menu-item";
+					li.dataset.id = user.id;
+
+					loginSpan.textContent = user.login;
+					li.appendChild(loginSpan);
+					li.append(document.createTextNode(" - "));
+					li.appendChild(passwordSpan);
+					if (user.id === appState.currentUser.id) {
+						li.innerHTML += " <i>(you)</i>";
+						deleteButton.classList.add("d-none");
+					}
+					li.innerHTML += " ";
+					li.appendChild(deleteButton);
+					list.appendChild(li);
+				}
+			}
+
+			menuList.prepend(userManageLi);
+		}
 
 		// blur listener
 		window.addEventListener("click", (e) => {

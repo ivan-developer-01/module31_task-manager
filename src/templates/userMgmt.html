@@ -1,0 +1,28 @@
+<h1>User Management</h1>
+
+<h2>Users</h2>
+<ul class="mgmt-list users">
+	<li class="mgmt-user" data-id="560116ca-d911-498a-bc6b-40453b2cc979">
+		<span class="mgmt-user-login">test</span> - <span class="mgmt-password">%$#@!</span>
+		<button class="mgmt-user-delete btn btn-danger">&times;</button>
+	</li>
+</ul>
+<p id="mgmt-no-users" class="d-none">No users yet.</p>
+
+<h2>Admins</h2>
+<ul class="mgmt-list admins">
+	<li class="mgmt-admin" data-id="55b622e7-5501-4f9c-87ed-662b4f4c82c5">
+		<span class="mgmt-admin-login">admin</span> - <span class="mgmt-password">admin</span> <i>(You)</i>
+		<button class="mgmt-admin-delete btn btn-danger" disabled>&times;</button>
+	</li>
+</ul>
+<p id="mgmt-no-admins" class="d-none">No admins yet.</p>
+
+<div class="mgmt-buttons">
+</div>
+
+<div class="mgmt-buttons btn-group">
+	<button class="btn btn-primary" id="mgmt-add-user">Add User</button>
+	<button class="btn btn-danger" id="mgmt-add-admin">Add Admin</button>
+	<button class="btn btn-secondary" id="mgmt-back">Back</button>
+</div>

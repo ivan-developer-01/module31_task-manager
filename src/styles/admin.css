@@ -1,0 +1,8 @@
+.mgmt-password {
+	font-family: Redacted;
+	user-select: none;
+}
+
+.mgmt-password:hover {
+	font-family: monospace;
+}

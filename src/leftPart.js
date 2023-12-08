@@ -15,6 +15,14 @@ export const toggleLeftPart = () => {
 	leftPart.classList[method]("visibility-hidden");
 };
 
+export const hideLeftPart = () => {
+	leftPart.classList.add("visibility-hidden");
+};
+
+export const showLeftPart = () => {
+	leftPart.classList.remove("visibility-hidden");
+};
+
 export const updateTaskCountInfo = () => {
 	const activeTasks = leftPart.querySelector("#app-active-tasks");
 	const finishedTasks = leftPart.querySelector("#app-finished-tasks");

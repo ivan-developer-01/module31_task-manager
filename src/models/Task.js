@@ -48,4 +48,15 @@ export class Task extends BaseModel {
 			throw new Error(e);
 		}
 	}
+
+	static deleteBelongsTo(id) {
+		try {
+			const tasks = getTasks();
+			const filtered = tasks.filter(task => task.belongsTo !== id);
+			replaceStorage(filtered, Task.storageKey);
+			return true;
+		} catch (e) {
+			throw new Error(e);
+		}
+	}
 }
