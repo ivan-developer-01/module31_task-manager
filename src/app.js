@@ -121,9 +121,7 @@ function updateTasks(taskDivs) {
 			try {
 				toInsert += `<li class="task" data-belongs-to="${task.belongs_to}" ${isUserAdmin() ? 'data-belongs-login="' + User.get(task.belongs_to).login + '"' : ""} data-id="${task.id}" data-desc="${task.extended_description || ""}"
 				>${task.title}</li>`;
-			} catch (error) {
-				console.error(error);
-			}
+			} catch (error) {}
 		}
 
 		taskDivs[i].innerHTML = toInsert;
@@ -164,6 +162,8 @@ function assignEventListeners(isFirstTime = false) {
 				let btns = [submitButtons[0], addButtons[0]];
 				
 				btns.forEach(button => button.classList.toggle("display-none"));
+
+				let taskAddedSwitch = false;
 				
 				btns[0].addEventListener("click", addTask);
 				input.addEventListener("blur", addTask);
@@ -172,7 +172,8 @@ function assignEventListeners(isFirstTime = false) {
 				});
 
 				function addTask() {
-					if (!input.value) return false;
+					if (!input.value || taskAddedSwitch) return false;
+					taskAddedSwitch = true;
 					const task = new Task("backlog", input.value, appState.currentUser.id);
 					Task.save(task);
 					updateTasks(getTaskDivs(divsObject));
