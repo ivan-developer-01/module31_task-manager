@@ -269,11 +269,11 @@ function assignEventListeners(isFirstTime = false) {
 					const popupDescription = popup.querySelector("#popup-description");
 
 					popupTitle.textContent = task.textContent;
-					popupDescription.textContent = task.dataset.desc || "Enter description...";
+					popupDescription.value = task.dataset.desc || "Enter description...";
 
 					if (!task.dataset.desc) {
 						popupDescription.addEventListener("click", () => {
-							popupDescription.textContent = "";
+							popupDescription.value = "";
 						}, { once: true });
 					}
 
@@ -282,7 +282,7 @@ function assignEventListeners(isFirstTime = false) {
 						task.dataset.desc = popupDescription.textContent;
 						thisTask.title = popupTitle.textContent;
 						thisTask.belongsTo = appState.currentUser.id;
-						thisTask.extendedDescription = popupDescription.textContent;
+						thisTask.extendedDescription = popupDescription.value;
 						thisTask.storageKey = Task.storageKey;
 						Task.update(thisTask.id, thisTask);
 						body.classList.remove("popup-open");

@@ -320,7 +320,7 @@
 .popup-edit #popup-description {
 	height: 100%;
 	width: 100%;
-	word-wrap: pre;
+	white-space: pre;
 }
 
 .popup-edit .popup-controls {
