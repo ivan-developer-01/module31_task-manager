@@ -17,6 +17,7 @@ export let readyDiv = null;
 export let inProgressDiv = null;
 export let finishedDiv = null;
 import { hideLeftPart, showLeftPart, toggleLeftPart, updateTaskCountInfo } from "./leftPart";
+import { v4 as uuidv4 } from "uuid";
 
 let allDivs = [backlogDiv, readyDiv, inProgressDiv, finishedDiv];
 const divsObject = {
@@ -55,7 +56,7 @@ if (!localStorage.getItem("users")) generateTestUser(User);
 if (!localStorage.getItem("admins")) {
 	const admins = [
 		{
-			id: "55b622e7-5501-4f9c-87ed-662b4f4c82c5",
+			id: uuidv4(),
 			login: "admin",
 			password: "admin",
 			storageKey: "admins"
