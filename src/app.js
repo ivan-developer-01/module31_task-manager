@@ -275,12 +275,15 @@ function assignEventListeners(isFirstTime = false) {
 				
 				const usersList = contentDiv.querySelector(".mgmt-list.users");
 				const adminsList = contentDiv.querySelector(".mgmt-list.admins");
+
+				const noUsersP = contentDiv.querySelector("#mgmt-no-users");
+				const noAdminsP = contentDiv.querySelector("#mgmt-no-admins");
 				
 				const addUserButton = contentDiv.querySelector("#mgmt-add-user");
 				const addAdminButton = contentDiv.querySelector("#mgmt-add-admin");
 				
-				const updateUsersList = updateList.bind(null, usersList, User.storageKey, "user");
-				const updateAdminsList = updateList.bind(null, adminsList, User.adminStorageKey, "admin");
+				const updateUsersList = updateList.bind(null, usersList, User.storageKey, "user", noUsersP);
+				const updateAdminsList = updateList.bind(null, adminsList, User.adminStorageKey, "admin", noAdminsP);
 
 				updateUsersList();
 				updateAdminsList();
@@ -317,9 +320,13 @@ function assignEventListeners(isFirstTime = false) {
 				});
 			});
 
-			function updateList(list, key, liKey) {
+			function updateList(list, key, liKey, noP) {
 				const users = getFromStorage(key);
 				list.innerHTML = "";
+				if (users.length === 0) {
+					noP.classList.remove("d-none");
+					return;
+				} else noP.classList.add("d-none");
 				for (let user of users) {
 					const li = document.createElement("li");
 					const loginSpan    = document.createElement("span");
@@ -337,7 +344,7 @@ function assignEventListeners(isFirstTime = false) {
 					deleteButton.addEventListener("click", () => {
 						User.delete(li.dataset.id);
 						Task.deleteBelongsTo(li.dataset.id);
-						updateList(list, key, liKey);
+						updateList(list, key, liKey, noP);
 					});
 
 					li.className = "menu-item";
