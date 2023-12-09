@@ -54,15 +54,8 @@ contentDiv.innerHTML = defaultTemplate;
 if (!localStorage.getItem("users")) generateTestUser(User);
 // admins
 if (!localStorage.getItem("admins")) {
-	const admins = [
-		{
-			id: uuidv4(),
-			login: "admin",
-			password: "admin",
-			storageKey: "admins"
-		}
-	];
-	localStorage.setItem("admins", JSON.stringify(admins));
+	const firstAdmin = new User("admin", "admin", true);
+	User.save(firstAdmin);
 }
 
 const addLoginListener = () => {
