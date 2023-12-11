@@ -5,6 +5,7 @@ This is a simple task manager created with JavaScript for learning purposes.
 ## Features
 
 - Create tasks
+- Drag tasks into another lists
 - Edit tasks
 - Delete tasks
 - Log in
