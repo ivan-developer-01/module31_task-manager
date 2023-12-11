@@ -49,6 +49,15 @@ export class Task extends BaseModel {
 		}
 	}
 
+	static get(id) {
+		try {
+			const tasks = getTasks();
+			return tasks.find(task => task.id === id);
+		} catch (e) {
+			throw new Error(e);
+		}
+	}
+
 	static deleteBelongsTo(id) {
 		try {
 			const tasks = getTasks();

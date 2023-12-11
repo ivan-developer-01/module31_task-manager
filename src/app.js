@@ -113,7 +113,15 @@ function updateTasks(taskDivs) {
 
 		for (let task of currentTasks) {
 			try {
-				toInsert += `<li class="task" data-belongs-to="${task.belongs_to}" ${isUserAdmin() ? 'data-belongs-login="' + User.get(task.belongs_to).login + '"' : ""} data-id="${task.id}" data-desc="${task.extended_description || ""}"
+				toInsert += `
+				<li
+					class="task"
+					data-belongs-to="${task.belongs_to}"
+					${isUserAdmin() ? 'data-belongs-login="' + User.get(task.belongs_to).login + '"' : ""}
+					data-id="${task.id}"
+					data-desc="${task.extended_description || ""}"
+					draggable="true"
+					data-group="${task.group}"
 				>${task.title}</li>`;
 			} catch (error) {}
 		}
@@ -420,6 +428,47 @@ function assignEventListeners(isFirstTime = false) {
 					popupDelete.addEventListener("click", deleteFunction, { once: true });
 				});
 			}
+		}
+	})();
+
+	// dragging tasks
+	(() => {
+		// add more allowed targets here
+		const associations = {
+			"backlog": ["ready"],
+			"ready": ["backlog", "in_progress", "in-progress"],
+			"in_progress": ["ready", "finished"],
+			get "in-progress"() { return this.in_progress; },
+			"finished": ["in_progress"],
+		};
+
+		let taskDivs = allDivs;
+		for (let i in taskDivs) {
+			const list = taskDivs[i].querySelector(".tasks");
+			list.dataset.group = taskDivs[i].dataset.group;
+			taskDivs[i].addEventListener("dragover", event => {
+				event.preventDefault();
+			});
+
+			for (let task of list.children) {
+				task.addEventListener("dragstart", (e) => {
+					e.dataTransfer.setData("text/plain", task.dataset.id + "|" + task.dataset.group);
+				});
+			}
+
+			taskDivs[i].addEventListener("drop", event => {
+				const [ taskId, taskGroup ] = event.dataTransfer.getData("text/plain").split("|");
+				if (
+					!associations[event.target.dataset.group]?.includes(taskGroup) ||
+					taskGroup.replaceAll("_", "-") === event.target.dataset.group) return false;
+				const thisTask = Task.get(taskId);
+				thisTask.group = event.target.dataset.group.replaceAll("-", "_");
+				thisTask.extendedDescription = thisTask.extended_description;
+				thisTask.belongsTo = thisTask.belongs_to;
+				Task.update(taskId, thisTask);
+				updateTasks(getTaskDivs(divsObject));
+				assignEventListeners();
+			});
 		}
 	})();
 }

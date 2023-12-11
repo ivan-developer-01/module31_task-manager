@@ -41,6 +41,10 @@
 	width: calc(calc(100% - calc(20px * 4)) / 4)
 }
 
+.task-list .tasks:empty {
+	height: 20px;
+}
+
 .main.admin .task-list .task::before {
 	content: attr(data-belongs-login) ": ";
 	font-weight: bold;
@@ -49,6 +53,7 @@
 .task-list .task {
 	cursor: pointer;
 	transition: background 0.09s;
+	user-select: none;
 }
 
 .task-list .task:hover {
